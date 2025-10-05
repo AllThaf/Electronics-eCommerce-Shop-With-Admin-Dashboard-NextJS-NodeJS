@@ -12,6 +12,12 @@ const nextConfig = {
     env: {
         NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     },
+    // Fix for Windows symlink issues
+    webpack: (config, { isServer }) => {
+        // Disable symlinks to avoid Windows issues
+        config.resolve.symlinks = false;
+        return config;
+    },
     async headers() {
       return [
         {
