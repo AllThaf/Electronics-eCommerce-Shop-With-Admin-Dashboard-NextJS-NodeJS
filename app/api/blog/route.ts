@@ -4,10 +4,27 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // GET all blog posts
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const showAll = searchParams.get('showAll') === 'true';
+
     const blogPosts = await prisma.blogPost.findMany({
-      orderBy: { createdAt: 'desc' }
+      where: showAll ? undefined : { isPublished: true },
+      orderBy: { publishedAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: false,
+        featuredImage: true,
+        author: true,
+        publishedAt: true,
+        readTime: true,
+        tags: true,
+        isPublished: true,
+      }
     });
     
     return NextResponse.json(blogPosts);
