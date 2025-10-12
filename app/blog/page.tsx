@@ -1,9 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import { Header, Footer } from "@/components";
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import Image from "next/image";
+import { Breadcrumb } from "@/components";
 
 interface BlogPost {
   id: string;
@@ -12,39 +10,45 @@ interface BlogPost {
   excerpt: string | null;
   featuredImage: string | null;
   author: string;
-  publishedAt: Date | null;
+  publishedAt: string | null;
   readTime: number | null;
   tags: string | null;
+  isPublished: boolean;
 }
 
 async function getBlogPosts(): Promise<BlogPost[]> {
-  const posts = await prisma.blogPost.findMany({
-    where: { isPublished: true },
-    orderBy: { publishedAt: 'desc' },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      featuredImage: true,
-      author: true,
-      publishedAt: true,
-      readTime: true,
-      tags: true
+  // Get the base URL from the environment or use a default for development
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+  const response = await fetch(`${baseUrl}/api/blog`, {
+    next: { revalidate: 60 }, // Revalidate every minute
+    headers: {
+      'Accept': 'application/json'
     }
   });
   
-  return posts;
+  if (!response.ok) {
+    throw new Error('Failed to fetch blog posts');
+  }
+
+  return response.json();
 }
 
 const BlogPage = async () => {
   const blogPosts = await getBlogPosts();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <main className="min-h-screen bg-white">
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumb 
+          items={[
+            { label: "Home", link: "/" },
+            { label: "Blog", link: "/blog" },
+          ]}
+        />
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Blog</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -59,80 +63,80 @@ const BlogPage = async () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogPosts.map((post) => (
-              <article key={post.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                {post.featuredImage && (
-                  <div className="aspect-w-16 aspect-h-9">
-                    <img
-                      src={post.featuredImage}
-                      alt={post.title}
-                      className="w-full h-48 object-cover"
-                    />
-                  </div>
-                )}
-                
-                <div className="p-6">
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <span>{post.author}</span>
-                    {post.publishedAt && (
-                      <>
-                        <span className="mx-2">•</span>
-                        <time dateTime={post.publishedAt.toISOString()}>
-                          {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </time>
-                      </>
-                    )}
-                    {post.readTime && (
-                      <>
-                        <span className="mx-2">•</span>
-                        <span>{post.readTime} min read</span>
-                      </>
-                    )}
-                  </div>
-                  
-                  <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
-                    <Link href={`/blog/${post.slug}`} className="hover:text-blue-600">
-                      {post.title}
-                    </Link>
-                  </h2>
-                  
-                  {post.excerpt && (
-                    <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                      {post.excerpt}
-                    </p>
-                  )}
-                  
-                  {post.tags && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {post.tags.split(',').slice(0, 3).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                        >
-                          {tag.trim()}
-                        </span>
-                      ))}
+              <Link 
+                key={post.id} 
+                href={`/blog/${post.slug}`}
+                className="group block bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:-translate-y-1"
+              >
+                <article>
+                  {post.featuredImage ? (
+                    <div className="relative h-48 w-full">
+                      <Image
+                        src={post.featuredImage}
+                        alt={post.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-400">No image</span>
                     </div>
                   )}
                   
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                  >
-                    Read more →
-                  </Link>
-                </div>
-              </article>
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-500">
+                        {post.publishedAt 
+                          ? new Date(post.publishedAt).toLocaleDateString("en-US", {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "Draft"}
+                      </span>
+                      {post.readTime && (
+                        <span className="text-sm text-gray-500">
+                          {post.readTime} min read
+                        </span>
+                      )}
+                    </div>
+
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200">
+                      {post.title}
+                    </h2>
+
+                    {post.excerpt && (
+                      <p className="text-gray-600 mb-4 line-clamp-3">
+                        {post.excerpt}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">
+                        By {post.author}
+                      </span>
+                      {post.tags && (
+                        <div className="flex flex-wrap gap-2">
+                          {post.tags.split(",").slice(0, 2).map((tag, index) => (
+                            <span
+                              key={index}
+                              className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"
+                            >
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              </Link>
             ))}
           </div>
         )}
       </div>
-      
-      <Footer />
-    </div>
+    </main>
   );
 };
 
