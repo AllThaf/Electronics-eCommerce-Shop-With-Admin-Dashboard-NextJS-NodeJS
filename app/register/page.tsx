@@ -22,7 +22,7 @@ const RegisterPage = () => {
     const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
     return emailRegex.test(email);
   };
-  
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     const email = e.target[2].value;
@@ -41,11 +41,11 @@ const RegisterPage = () => {
       return;
     }
 
-    if (confirmPassword !== password) {
-      setError("Passwords are not equal");
-      toast.error("Passwords are not equal");
-      return;
-    }
+    // if (confirmPassword !== password) {
+    //   setError("Passwords are not equal");
+    //   toast.error("Passwords are not equal");
+    //   return;
+    // }
 
     try {
       // sending API request for registering user

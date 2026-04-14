@@ -21,7 +21,7 @@ const paymentValidation = {
 
     // Remove all non-digit characters
     const cleanedNumber = cardNumber.replace(/[^0-9]/g, '');
-    
+
     // Check length (13-19 digits)
     if (cleanedNumber.length < 13 || cleanedNumber.length > 19) {
       throw new ValidationError('Card number must be between 13 and 19 digits', 'cardNumber');
@@ -30,25 +30,25 @@ const paymentValidation = {
     // Luhn algorithm validation
     let sum = 0;
     let isEven = false;
-    
+
     for (let i = cleanedNumber.length - 1; i >= 0; i--) {
       let digit = parseInt(cleanedNumber[i]);
-      
+
       if (isEven) {
         digit *= 2;
         if (digit > 9) {
           digit -= 9;
         }
       }
-      
+
       sum += digit;
       isEven = !isEven;
     }
-    
+
     if (sum % 10 !== 0) {
       throw new ValidationError('Invalid card number', 'cardNumber');
     }
-    
+
     return cleanedNumber;
   },
 
@@ -59,20 +59,20 @@ const paymentValidation = {
     }
 
     const cleanedCVV = cvv.replace(/[^0-9]/g, '');
-    
+
     // American Express cards have 4-digit CVV, others have 3-digit
     const cleanedCardNumber = cardNumber ? cardNumber.replace(/[^0-9]/g, '') : '';
     const isAmex = cleanedCardNumber.startsWith('34') || cleanedCardNumber.startsWith('37');
     const expectedLength = isAmex ? 4 : 3;
-    
+
     if (cleanedCVV.length !== expectedLength) {
       throw new ValidationError(`CVV must be ${expectedLength} digits`, 'cvv');
     }
-    
+
     if (!/^[0-9]+$/.test(cleanedCVV)) {
       throw new ValidationError('CVV must contain only numbers', 'cvv');
     }
-    
+
     return cleanedCVV;
   },
 
@@ -84,7 +84,7 @@ const paymentValidation = {
 
     // Accept MM/YY, MM/YYYY, MM-YY, MM-YYYY formats
     const cleanedDate = expDate.replace(/[^0-9]/g, '');
-    
+
     if (cleanedDate.length !== 4 && cleanedDate.length !== 6) {
       throw new ValidationError('Expiration date must be in MM/YY or MM/YYYY format', 'expDate');
     }
@@ -114,7 +114,7 @@ const paymentValidation = {
     }
 
     const trimmedName = name.trim();
-    
+
     if (trimmedName.length < 2) {
       throw new ValidationError('Cardholder name must be at least 2 characters', 'cardholderName');
     }
@@ -141,7 +141,7 @@ const orderValidation = {
     }
 
     const trimmedEmail = email.trim().toLowerCase();
-    
+
     // Check for suspicious patterns FIRST (before format validation)
     const suspiciousPatterns = [
       /<script/i,
@@ -149,17 +149,17 @@ const orderValidation = {
       /on\w+\s*=/i,
       /data:/i,
     ];
-    
+
     if (suspiciousPatterns.some(pattern => pattern.test(trimmedEmail))) {
       throw new ValidationError('Email contains invalid characters', 'email');
     }
-    
+
     if (trimmedEmail.length > 254) {
       throw new ValidationError('Email must be less than 254 characters', 'email');
     }
 
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    
+
     if (!emailRegex.test(trimmedEmail)) {
       throw new ValidationError('Invalid email format', 'email');
     }
@@ -174,7 +174,7 @@ const orderValidation = {
     }
 
     const trimmedName = name.trim();
-    
+
     if (trimmedName.length < 2) {
       throw new ValidationError(`${fieldName} must be at least 2 characters`, fieldName);
     }
@@ -198,7 +198,7 @@ const orderValidation = {
     }
 
     const cleanedPhone = phone.replace(/[^0-9+\-\(\)\s]/g, '');
-    
+
     if (cleanedPhone.length < 10) {
       throw new ValidationError('Phone number must be at least 10 digits', 'phone');
     }
@@ -217,10 +217,10 @@ const orderValidation = {
     }
 
     const trimmedAddress = address.trim();
-    
+
     // Special case for apartment - only 1 character minimum
     const minLength = fieldName === 'apartment' ? 1 : 5;
-    
+
     if (trimmedAddress.length < minLength) {
       throw new ValidationError(`${fieldName} must be at least ${minLength} characters`, fieldName);
     }
@@ -236,7 +236,7 @@ const orderValidation = {
       /on\w+\s*=/i,
       /data:/i,
     ];
-    
+
     if (suspiciousPatterns.some(pattern => pattern.test(trimmedAddress))) {
       throw new ValidationError(`${fieldName} contains invalid characters`, fieldName);
     }
@@ -251,7 +251,7 @@ const orderValidation = {
     }
 
     const trimmedCode = postalCode.trim();
-    
+
     if (trimmedCode.length < 3) {
       throw new ValidationError('Postal code must be at least 3 characters', 'postalCode');
     }
@@ -270,7 +270,7 @@ const orderValidation = {
     }
 
     const numTotal = parseFloat(total);
-    
+
     if (isNaN(numTotal)) {
       throw new ValidationError('Total must be a valid number', 'total');
     }
@@ -289,7 +289,7 @@ const orderValidation = {
   // Validate order status
   validateStatus: (status) => {
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-    
+
     if (!status || typeof status !== 'string') {
       throw new ValidationError('Order status is required', 'status');
     }
@@ -341,9 +341,9 @@ const validateOrderData = (orderData) => {
   validatedData.postalCode = safeValidate(orderValidation.validatePostalCode, orderData.postalCode, 'postalCode');
   validatedData.total = safeValidate(orderValidation.validateTotal, orderData.total, 'total');
   validatedData.status = safeValidate(orderValidation.validateStatus, orderData.status || 'pending', 'status');
-  
+
   // Optional fields
-  validatedData.orderNotice = orderData.orderNotice ? 
+  validatedData.orderNotice = orderData.orderNotice ?
     orderData.orderNotice.trim().substring(0, 500) : ''; // Limit to 500 characters
 
   return {
@@ -382,11 +382,11 @@ const validatePaymentData = (paymentData) => {
   if (paymentData.cardNumber) {
     validatedData.cardNumber = safeValidatePayment(paymentValidation.validateCardNumber, paymentData.cardNumber, 'cardNumber');
   }
-  
+
   if (paymentData.cvv) {
     validatedData.cvv = safeValidatePayment(paymentValidation.validateCVV, paymentData.cvv, 'cvv');
   }
-  
+
   if (paymentData.expDate) {
     try {
       validatedData.expDate = paymentValidation.validateExpirationDate(paymentData.expDate);
@@ -399,7 +399,7 @@ const validatePaymentData = (paymentData) => {
       }
     }
   }
-  
+
   if (paymentData.cardholderName) {
     try {
       validatedData.cardholderName = paymentValidation.validateCardholderName(paymentData.cardholderName);
