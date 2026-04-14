@@ -21,7 +21,7 @@ const DashboardProductTable = () => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    apiClient.get("/api/products?mode=admin", {cache: "no-store"})
+    apiClient.get("/api/products?mode=admin", { cache: "no-store" })
       .then((res) => {
         return res.json();
       })
@@ -96,12 +96,12 @@ const DashboardProductTable = () => {
                   </td>
 
                   <td>
-                    { product?.inStock ? (<span className="badge badge-success text-white badge-sm">
+                    {product?.inStock ? (<span className="badge badge-success text-white badge-sm">
                       In stock
                     </span>) : (<span className="badge badge-error text-white badge-sm">
                       Out of stock
-                    </span>) }
-                    
+                    </span>)}
+
                   </td>
                   <td>${product?.price}</td>
                   <th>
