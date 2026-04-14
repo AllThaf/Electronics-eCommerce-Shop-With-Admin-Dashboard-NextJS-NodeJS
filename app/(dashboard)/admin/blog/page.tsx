@@ -36,20 +36,20 @@ const DashboardBlog = () => {
     }
   };
 
-  const deleteBlogPost = async (id: string) => {
+  const deleteBlogPost = async (slug: string) => {
     if (confirm('Are you sure you want to delete this blog post?')) {
       try {
-        await fetch(`/api/blog/${id}`, { method: 'DELETE' });
-        setBlogPosts(blogPosts.filter(post => post.id !== id));
+        await fetch(`/api/blog/${slug}`, { method: 'DELETE' });
+        setBlogPosts(blogPosts.filter(post => post.slug !== slug));
       } catch (error) {
         console.error('Error deleting blog post:', error);
       }
     }
   };
 
-  const togglePublish = async (id: string, currentStatus: boolean) => {
+  const togglePublish = async (slug: string, currentStatus: boolean) => {
     try {
-      await fetch(`/api/blog/${id}`, {
+      await fetch(`/api/blog/${slug}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPublished: !currentStatus })
@@ -137,17 +137,17 @@ const DashboardBlog = () => {
                     {post.readTime ? `${post.readTime} min` : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <Link href={`/admin/blog/${post.id}`}>
+                    <Link href={`/admin/blog/${post.slug}`}>
                       <button className="text-blue-600 hover:text-blue-900">Edit</button>
                     </Link>
                     <button 
-                      onClick={() => togglePublish(post.id, post.isPublished)}
+                      onClick={() => togglePublish(post.slug, post.isPublished)}
                       className="text-green-600 hover:text-green-900"
                     >
                       {post.isPublished ? 'Unpublish' : 'Publish'}
                     </button>
                     <button 
-                      onClick={() => deleteBlogPost(post.id)}
+                      onClick={() => deleteBlogPost(post.slug)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
